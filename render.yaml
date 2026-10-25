@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ci-codes-enterprise
+    runtime: node
+    plan: free
+    buildCommand: npm run check
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production

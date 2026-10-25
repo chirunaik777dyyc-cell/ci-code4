@@ -1,0 +1,18 @@
+{
+  "name": "ci-codes-enterprise",
+  "version": "3.0.1",
+  "private": true,
+  "description": "CI Codes v3.0 — browser-based coding IDE founded by Chiragpala Naik MD",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js && node tests/smoke-test.js && node tests/worker-test.js && node tests/integration-test.js",
+    "test": "node tests/smoke-test.js && node tests/worker-test.js && node tests/integration-test.js"
+  },
+  "author": "Chiragpala Naik MD",
+  "license": "SEE LICENSE IN LICENSE_COPYRIGHT.txt",
+  "engines": {
+    "node": ">=20 <27"
+  }
+}

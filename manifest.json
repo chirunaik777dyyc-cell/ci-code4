@@ -1,0 +1,9 @@
+{
+  "name": "CI Codes v3.0 — Founded by Chiragpala Naik MD",
+  "short_name": "CI Codes",
+  "description": "Browser coding IDE with WebAssembly runtimes and optional online compilation, founded by Chiragpala Naik MD.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060911",
+  "theme_color": "#4F46E5"
+}

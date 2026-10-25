@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CI Codes v3.0 — Browser Coding IDE | Founded by Chiragpala Naik MD</title>
+  
+  <!-- Google Search Console Verification Placeholder -->
+  <meta name="google-site-verification" content="PASTE_YOUR_GOOGLE_VERIFICATION_CODE_HERE" />
+
+  <!-- Primary SEO Meta Tags -->
+  <meta name="description" content="CI Codes v3.0 is a browser-based multi-language coding IDE with WebAssembly runtimes, HTML preview, code tools, and optional online compilation, founded by Chiragpala Naik MD." />
+  <meta name="keywords" content="CI Codes, Chiragpala Naik MD, zero latency compiler, Pyodide IDE, online compiler, cloud IDE, learn programming, coding platform" />
+  <meta name="author" content="Chiragpala Naik MD" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Viral Sharing Tags -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CI Codes v3.0 — Browser Coding IDE | Founded by Chiragpala Naik MD" />
+  <meta property="og:description" content="Edit code, run JavaScript in a timed worker, use Python and SQLite WebAssembly runtimes, preview HTML, and optionally compile through an online service." />
+  <meta property="og:site_name" content="CI Codes" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CI Codes v3.0 — Founded by Chiragpala Naik MD" />
+  <meta name="twitter:description" content="Browser coding IDE with multiple languages, WebAssembly runtimes, HTML preview, multi-file workspace, code helper, and contest timer." />
+
+  <!-- PWA & Theme -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#070A12" />
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "CI Codes",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web Browser",
+    "founder": {
+      "@type": "Person",
+      "name": "Chiragpala Naik MD",
+      "jobTitle": "Founder & Managing Director"
+    },
+    "description": "Browser-based multi-language IDE with WebAssembly runtimes, HTML preview, code helper, and optional online compilation."
+  }
+  </script>
+
+  <!-- Tailwind CSS & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- In-browser SQLite WASM runtime; Python WASM is loaded in a dedicated worker when requested. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #060911; color: #E2E8F0; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090D16; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden select-none">
+
+  <!-- Top Founder & Engine Telemetry Ribbon -->
+  <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 border-b border-slate-800 px-3 py-1 flex flex-wrap items-center justify-between text-[11px] gap-2">
+    <div class="flex items-center gap-2">
+      <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold">BROWSER WASM + CLOUD v3.0</span>
+      <span class="text-slate-300">Founded by <strong class="text-white font-bold underline decoration-indigo-400">Chiragpala Naik MD</strong> (Founder &amp; Managing Director)</span>
+    </div>
+    <div class="flex items-center gap-3 text-slate-300">
+      <span id="wasmStatusBadge" class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700 text-[10px]">
+        <span id="wasmDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span id="wasmText">Loading SQLite; Python starts in a worker on Run</span>
+      </span>
+      <button onclick="toggleContestMode()" id="contestBtn" class="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-semibold transition">
+        ⏱ Start Contest Mode
+      </button>
+      <span id="contestHud" class="hidden items-center gap-2 px-2 py-0.5 rounded bg-rose-950 border border-rose-600 text-rose-200 font-mono text-[10px]">
+        <span id="contestTimer">60:00</span> | Tab Switches: <strong id="tabSwitchCount">0</strong>
+      </span>
+      <a href="terms.html" target="_blank" class="hover:text-white hidden sm:inline">Terms</a>
+      <a href="privacy.html" target="_blank" class="hover:text-white hidden sm:inline">Privacy</a>
+      <button onclick="toggleModal('legalModal')" class="text-indigo-400 hover:text-indigo-300 font-semibold">IP &amp; Copyright</button>
+    </div>
+  </div>
+
+  <!-- Main IDE Header -->
+  <header class="bg-[#0B0F19] border-b border-slate-800/90 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-emerald-500 flex items-center justify-center font-extrabold text-white text-base shadow-lg shadow-indigo-500/20">
+        CI
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-sm md:text-base tracking-tight text-white">CI CODES</h1>
+          <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-bold">ENTERPRISE</span>
+        </div>
+        <p class="text-[10px] text-slate-400">Chiragpala Naik MD • Hybrid WASM + Cloud Cluster</p>
+      </div>
+    </div>
+
+    <!-- Center Execution Mode & Language Selector -->
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-slate-900 border border-slate-700 text-slate-100 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+        <option value="python">⚡ Python (Pyodide browser worker + Cloud)</option>
+        <option value="javascript">⚡ JavaScript (Timed Web Worker)</option>
+        <option value="sql">⚡ SQL Database (In-Browser SQLite WASM)</option>
+        <option value="html">⚡ HTML5 / CSS3 / JS (Live Instant Studio)</option>
+        <option value="cpp">🔥 C++ (GCC online compiler)</option>
+        <option value="java">☕ Java (online compiler)</option>
+        <option value="c">⚙️ C (GCC online compiler)</option>
+        <option value="typescript">🔷 TypeScript (online compiler)</option>
+        <option value="rust">🦀 Rust (online compiler)</option>
+        <option value="go">🐹 Go (online compiler)</option>
+        <option value="csharp">🟣 C# (online compiler)</option>
+        <option value="php">🐘 PHP (online compiler)</option>
+        <option value="ruby">💎 Ruby (online compiler)</option>
+      </select>
+
+      <select id="engineMode" class="bg-slate-900 border border-slate-700 text-emerald-400 text-[11px] font-semibold rounded-lg px-2 py-1.5 focus:outline-none" title="Choose Execution Engine">
+        <option value="auto">Engine: Auto Hybrid (Fastest)</option>
+        <option value="local">Engine: Force Browser Runtime</option>
+        <option value="cloud">Engine: Force Cloud Cluster</option>
+      </select>
+
+      <button onclick="toggleModal('libModal')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition">
+        + Libraries
+      </button>
+
+      <button onclick="runAiDoctor()" class="bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition" title="Run local code checks and basic fixes">
+        <span>✨ Code Fix &amp; Explain</span>
+      </button>
+
+      <button onclick="runCode()" id="runBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-lg shadow-emerald-600/25 flex items-center gap-1.5 transition">
+        <span>▶ Run (Ctrl+Enter)</span>
+      </button>
+
+      <button onclick="generateShareUrl()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition" title="Create a shareable link containing your code in the URL">
+        🔗 Share Link
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3-Column IDE Layout -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+    
+    <!-- Left Column: Multi-File Explorer + Challenges + Package Injector -->
+    <aside class="lg:col-span-3 bg-[#090D16] border-r border-slate-800/80 flex flex-col overflow-hidden">
+      
+      <!-- Multi-File Project Tree -->
+      <div class="p-2.5 border-b border-slate-800">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Project Files</span>
+          <button onclick="createNewFile()" class="text-[11px] bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded font-semibold">+ New File</button>
+        </div>
+        <div id="fileListContainer" class="space-y-1 max-h-28 overflow-y-auto"></div>
+      </div>
+
+      <!-- Interactive Coding Challenges & Test Judge -->
+      <div class="p-2.5 border-b border-slate-800 flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">DSA &amp; Full-Stack Labs</span>
+        <button onclick="runTestCases()" class="text-[10px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">✓ Run Judge</button>
+      </div>
+
+      <div class="p-2.5 space-y-2 overflow-y-auto flex-1">
+        <div onclick="loadChallenge(0)" class="p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white">1. Two Sum O(N) Hash</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400">Python WASM</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Browser Python lab with output-matching checks.</p>
+        </div>
+
+        <div onclick="loadChallenge(1)" class="p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white">2. SQL E-Commerce Analytics</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400">SQLite WASM</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Zero-delay SQL table joins &amp; aggregation in browser.</p>
+        </div>
+
+        <div onclick="loadChallenge(2)" class="p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white">3. C++20 Graph Dijkstra</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-400">STL PriorityQ</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Shortest path solver using C++ STL priority_queue.</p>
+        </div>
+
+        <div onclick="loadChallenge(3)" class="p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white">4. Live Interactive Web App</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-400">HTML5 Studio</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Real-time rendered UI dashboard inside CI Codes.</p>
+        </div>
+
+        <!-- 1-Click Universal Package & Header Injector -->
+        <div class="pt-3 border-t border-slate-800">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Instant Library Inject</div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="injectLib('python_ds')" class="text-[10px] bg-slate-800 hover:bg-indigo-900/50 border border-slate-700 px-2 py-1 rounded text-slate-300 text-left">🐍 Python NumPy/Math</button>
+            <button onclick="injectLib('cpp_Competitive')" class="text-[10px] bg-slate-800 hover:bg-indigo-900/50 border border-slate-700 px-2 py-1 rounded text-slate-300 text-left">⚡ C++ bits/stdc++.h</button>
+            <button onclick="injectLib('web_tailwind')" class="text-[10px] bg-slate-800 hover:bg-indigo-900/50 border border-slate-700 px-2 py-1 rounded text-slate-300 text-left">🎨 Tailwind + Chart.js</button>
+            <button onclick="injectLib('java_util')" class="text-[10px] bg-slate-800 hover:bg-indigo-900/50 border border-slate-700 px-2 py-1 rounded text-slate-300 text-left">☕ Java Collections</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Founder Attribution Footer -->
+      <div class="p-2.5 bg-slate-950 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+        <div>
+          <div class="font-bold text-slate-200">Chiragpala Naik MD</div>
+          <div class="text-[10px] text-slate-500">Founder &amp; MD • CI Codes</div>
+        </div>
+        <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">v3.0</span>
+      </div>
+    </aside>
+
+    <!-- Center Column: Code Editor + Line Numbers + Interactive STDIN -->
+    <section class="lg:col-span-5 flex flex-col bg-[#0D1117] border-r border-slate-800 overflow-hidden">
+      <!-- File Tab Bar -->
+      <div class="px-3 py-1.5 bg-[#0B0F19] border-b border-slate-800 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span id="fileTabName" class="mono text-indigo-400 font-bold">main.py</span>
+          <span id="autoSaveStatus" class="text-[10px] text-slate-500">• Auto-saved locally</span>
+        </div>
+        <div class="flex items-center gap-3 text-[11px]">
+          <button onclick="formatCode()" class="text-slate-400 hover:text-white" title="Trim trailing whitespace">Trim whitespace</button>
+          <button onclick="resetCode()" class="text-slate-400 hover:text-white">Reset</button>
+          <button onclick="downloadCodeFile()" class="text-emerald-400 hover:text-emerald-300 font-semibold">⬇ Download</button>
+        </div>
+      </div>
+
+      <!-- Editor Area with Line Numbers -->
+      <div class="flex-1 flex overflow-hidden relative">
+        <div id="lineNumbers" class="mono bg-[#090D16] text-slate-600 text-right pr-2.5 pl-2 pt-3.5 text-xs leading-relaxed select-none border-r border-slate-800/80 overflow-hidden">1</div>
+        <textarea id="codeEditor" spellcheck="false" oninput="onEditorInput()" onscroll="syncScroll()" class="mono flex-1 w-full bg-[#0D1117] text-slate-100 p-3.5 text-xs md:text-sm leading-relaxed focus:outline-none resize-none select-text overflow-y-auto"></textarea>
+      </div>
+
+      <!-- Interactive STDIN & Command Line Arguments -->
+      <div class="border-t border-slate-800 bg-[#090D16] p-2">
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Standard Input (STDIN) — Feeds <code class="text-indigo-300">input()</code> / <code class="text-indigo-300">cin</code> / <code class="text-indigo-300">Scanner</code></label>
+          <span class="text-[10px] text-slate-500">1 line per input prompt</span>
+        </div>
+        <textarea id="stdinBox" rows="2" placeholder="Example:&#10;42&#10;Chiragpala Naik MD" class="mono w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 select-text"></textarea>
+      </div>
+    </section>
+
+    <!-- Right Column: Real-Time Output Console, Live Web Preview & AI Doctor -->
+    <section class="lg:col-span-4 flex flex-col bg-[#070A12] overflow-hidden">
+      <div class="px-3 py-1.5 bg-[#0B0F19] border-b border-slate-800 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="font-bold uppercase tracking-wider text-slate-300">Terminal / Live Output</span>
+          <button onclick="clearConsole()" class="text-[10px] text-slate-500 hover:text-slate-300">Clear</button>
+        </div>
+        <span id="execMeta" class="mono text-[11px] text-emerald-400 font-semibold">Ready — select code and Run</span>
+      </div>
+
+      <!-- Console Output -->
+      <pre id="outputConsole" class="mono flex-1 p-3.5 text-xs text-slate-200 overflow-y-auto whitespace-pre-wrap select-text leading-relaxed">⚡ CI Codes v3.0 Enterprise Hybrid IDE
+Founded by Chiragpala Naik MD (Founder & Managing Director)
+-----------------------------------------------------------
+• Python and SQLite use browser WASM when their runtimes finish loading; JavaScript uses a timed worker.
+• Compiled languages require the external online compiler and an internet connection.
+• Press "▶ Run (Ctrl+Enter)" to execute immediately.</pre>
+
+      <!-- Live HTML/CSS/JS Preview Iframe -->
+      <iframe id="webPreview" class="hidden flex-1 w-full bg-white border-0" sandbox="allow-scripts allow-modals"></iframe>
+
+      <!-- Interactive Terminal Prompt Simulator -->
+      <div class="border-t border-slate-800 bg-[#0B0F19] px-3 py-1.5 flex items-center gap-2">
+        <span class="mono text-xs text-emerald-400 font-bold">$</span>
+        <input id="quickReplInput" type="text" onkeydown="if(event.key==='Enter')runQuickRepl()" placeholder="Interactive Quick Eval (e.g. 2**32 or Math.sqrt(144)) + Enter..." class="mono flex-1 bg-transparent text-xs text-slate-200 focus:outline-none select-text" />
+      </div>
+    </section>
+  </main>
+
+  <!-- Universal Libraries Modal -->
+  <div id="libModal" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="font-bold text-white">Universal Libraries &amp; Package Injector</h3>
+        <button onclick="toggleModal('libModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Click any library stack below to inject its headers/imports directly into your active file. Note: In-browser Python (Pyodide) automatically downloads imported packages like <code class="text-indigo-300">numpy</code> or <code class="text-indigo-300">pandas</code>!</p>
+      <div class="grid grid-cols-2 gap-2.5 my-4 text-xs">
+        <button onclick="injectLib('python_ds');toggleModal('libModal')" class="p-2.5 rounded bg-slate-800 hover:bg-slate-700 text-left border border-slate-700">
+          <div class="font-bold text-indigo-300">Python Data Science &amp; Algo</div>
+          <div class="text-[11px] text-slate-400">math, collections, itertools, heapq</div>
+        </button>
+        <button onclick="injectLib('python_numpy');toggleModal('libModal')" class="p-2.5 rounded bg-slate-800 hover:bg-slate-700 text-left border border-slate-700">
+          <div class="font-bold text-emerald-300">Python NumPy (WASM Auto-Load)</div>
+          <div class="text-[11px] text-slate-400">import numpy as np (Matrix ops)</div>
+        </button>
+        <button onclick="injectLib('cpp_Competitive');toggleModal('libModal')" class="p-2.5 rounded bg-slate-800 hover:bg-slate-700 text-left border border-slate-700">
+          <div class="font-bold text-amber-300">C++20 Competitive STL</div>
+          <div class="text-[11px] text-slate-400">#include &lt;bits/stdc++.h&gt; + Fast I/O</div>
+        </button>
+        <button onclick="injectLib('web_tailwind');toggleModal('libModal')" class="p-2.5 rounded bg-slate-800 hover:bg-slate-700 text-left border border-slate-700">
+          <div class="font-bold text-purple-300">Web UI + Chart.js + Icons</div>
+          <div class="text-[11px] text-slate-400">Tailwind CSS + Chart.js CDN</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copyright & IP Modal -->
+  <div id="legalModal" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full p-5 shadow-2xl text-xs space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="font-bold text-base text-white">Copyright, IP &amp; Legal Protection</h3>
+        <button onclick="toggleModal('legalModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-slate-300"><strong>Platform Ownership:</strong> CI Codes, its hybrid execution architecture, UI/UX design, brand assets, and curated problem sets are the exclusive intellectual property of <strong>Chiragpala Naik MD (Founder &amp; Managing Director)</strong>. © 2026 CI Codes. All rights reserved.</p>
+      <p class="text-slate-300"><strong>User Code Ownership:</strong> Users retain 100% copyright over original code written inside the workspace.</p>
+      <div class="flex gap-3 pt-2">
+        <a href="terms.html" target="_blank" class="px-3 py-1.5 rounded bg-indigo-600 text-white font-semibold">Terms &amp; AUP</a>
+        <a href="privacy.html" target="_blank" class="px-3 py-1.5 rounded bg-slate-800 text-slate-200 font-semibold">Privacy Policy</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // CI CODES v3.0 — ZERO-LATENCY HYBRID EXECUTION ENGINE
+    // Founded by Chiragpala Naik MD
+    // ============================================================================
+
+    const STARTER_TEMPLATES = {
+      python: {
+        ext: "main.py",
+        piston: { language: "python", version: "3.10.0" },
+        code: `# CI Codes v3.0 — Founded by Chiragpala Naik MD\n# Runs in a dedicated Pyodide WASM worker or the online compiler.\nimport math\nfrom collections import Counter\n\ndef analyze_scores(scores):\n    counts = Counter(scores)\n    top_score, freq = counts.most_common(1)[0]\n    return {\n        "count": len(scores),\n        "average": round(sum(scores) / len(scores), 2),\n        "most_frequent": (top_score, freq),\n        "factorial_5": math.factorial(5)\n    }\n\nif __name__ == "__main__":\n    sample = [95, 88, 95, 100, 76, 95, 89]\n    result = analyze_scores(sample)\n    print("🚀 CI Codes Python WASM Worker Online!")\n    print("📊 Analytics Result:", result)\n`
+      },
+      javascript: {
+        ext: "index.js",
+        piston: { language: "javascript", version: "18.15.0" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\n// Runs in a timed isolated browser Web Worker.\nconst platform = {\n  name: "CI Codes v3.0",\n  founder: "Chiragpala Naik MD",\n  latency: "Timed WebWorker",\n  features: ["Python WASM", "SQLite WASM", "Multi-File IDE", "Code Helper"]\n};\n\nconsole.log("⚡ " + platform.name + " — Founded by " + platform.founder);\nconsole.log("Loaded Modules:", platform.features.join(" | "));\n`
+      },
+      sql: {
+        ext: "query.sql",
+        piston: { language: "sqlite3", version: "3.36.0" },
+        code: `-- CI Codes v3.0 — In-Browser SQLite WASM Engine\n-- Founded by Chiragpala Naik MD\nCREATE TABLE IF NOT EXISTS developers (\n  id INTEGER PRIMARY KEY,\n  name TEXT,\n  role TEXT,\n  score INTEGER\n);\n\nINSERT OR REPLACE INTO developers VALUES (1, 'Chiragpala Naik MD', 'Founder & Managing Director', 1000);\nINSERT OR REPLACE INTO developers VALUES (2, 'Aarav Sharma', 'Full-Stack Engineer', 920);\nINSERT OR REPLACE INTO developers VALUES (3, 'Priya Patel', 'AI Systems Architect', 955);\n\nSELECT id, name, role, score FROM developers ORDER BY score DESC;\n`
+      },
+      html: {
+        ext: "index.html",
+        piston: null,
+        code: `<!DOCTYPE html>\n<html>\n<head>\n  <script src="https://cdn.tailwindcss.com"><\/script>\n</head>\n<body class="bg-slate-950 text-white p-6 font-sans">\n  <div class="max-w-md mx-auto p-6 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-emerald-600 shadow-2xl">\n    <span class="text-xs uppercase tracking-widest bg-black/30 px-2.5 py-1 rounded-full font-bold">Live HTML5 Studio</span>\n    <h1 class="text-2xl font-extrabold mt-3">CI Codes v3.0</h1>\n    <p class="text-sm opacity-90 mt-1">Founded by <strong>Chiragpala Naik MD</strong></p>\n    <button onclick="document.getElementById('msg').textContent='⚡ Interactive DOM Event Fired at ' + new Date().toLocaleTimeString()" class="mt-4 bg-white text-slate-900 font-bold text-xs px-4 py-2 rounded-lg shadow hover:bg-slate-100 transition">Test Live JS Click</button>\n    <p id="msg" class="text-xs mt-3 font-mono text-emerald-200"></p>\n  </div>\n</body>\n</html>`
+      },
+      cpp: {
+        ext: "main.cpp",
+        piston: { language: "c++", version: "10.2.0" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\n#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    vector<int> nums = {64, 12, 99, 7, 42, 18};\n    sort(nums.begin(), nums.end());\n    cout << "🔥 CI Codes C++20 Engine Ready!\\nSorted Array: ";\n    for (int n : nums) cout << n << " ";\n    cout << "\\n";\n    return 0;\n}\n`
+      },
+      java: {
+        ext: "Main.java",
+        piston: { language: "java", version: "15.0.2" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("☕ CI Codes Java Runtime Ready!");\n        int[] arr = {10, 20, 30, 40, 50};\n        int sum = Arrays.stream(arr).sum();\n        System.out.println("Stream Sum = " + sum);\n    }\n}\n`
+      },
+      c: {
+        ext: "main.c",
+        piston: { language: "c", version: "10.2.0" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\n#include <stdio.h>\n\nint main() {\n    printf("⚙️ CI Codes C17 GCC Engine Online!\\n");\n    for (int i = 1; i <= 5; i++) {\n        printf("Step %d squared = %d\\n", i, i * i);\n    }\n    return 0;\n}\n`
+      },
+      typescript: {
+        ext: "main.ts",
+        piston: { language: "typescript", version: "5.0.3" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\ninterface FounderInfo {\n  platform: string;\n  founder: string;\n  version: number;\n}\nconst info: FounderInfo = { platform: "CI Codes", founder: "Chiragpala Naik MD", version: 3.0 };\nconsole.log(\`🔷 \${info.platform} v\${info.version} by \${info.founder}\`);\n`
+      },
+      rust: {
+        ext: "main.rs",
+        piston: { language: "rust", version: "1.68.2" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\nfn main() {\n    let items = vec![1, 2, 3, 4, 5];\n    let doubled: Vec<i32> = items.iter().map(|x| x * 2).collect();\n    println!("🦀 CI Codes Rust Engine Ready! Doubled: {:?}", doubled);\n}\n`
+      },
+      go: {
+        ext: "main.go",
+        piston: { language: "go", version: "1.16.2" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\npackage main\nimport "fmt"\n\nfunc main() {\n    fmt.Println("🐹 CI Codes Go Concurrency Runtime Online!")\n}\n`
+      },
+      csharp: {
+        ext: "Program.cs",
+        piston: { language: "csharp", version: "6.12.0" },
+        code: `// CI Codes v3.0 — Founded by Chiragpala Naik MD\nusing System;\nclass Program {\n    static void Main() {\n        Console.WriteLine("🟣 CI Codes C# .NET Runtime Online!");\n    }\n}\n`
+      },
+      php: {
+        ext: "index.php",
+        piston: { language: "php", version: "8.2.3" },
+        code: `<?php\n// CI Codes v3.0 — Founded by Chiragpala Naik MD\necho "🐘 CI Codes PHP 8.2 Engine Ready!\\n";\n?>`
+      },
+      ruby: {
+        ext: "main.rb",
+        piston: { language: "ruby", version: "3.0.1" },
+        code: `# CI Codes v3.0 — Founded by Chiragpala Naik MD\nputs "💎 CI Codes Ruby Runtime Online!"\n`
+      }
+    };
+
+    // Multi-File Project State
+    let currentLang = "python";
+    let projectFiles = {};
+    let activeFileName = "main.py";
+    let activeChallengeIdx = null;
+
+    // WASM Runtime Instances
+    let sqlJsReady = false;
+    let SQLInstance = null;
+    let SQLDatabase = null;
+
+    const editor = document.getElementById("codeEditor");
+    const outputConsole = document.getElementById("outputConsole");
+    const webPreview = document.getElementById("webPreview");
+    const execMeta = document.getElementById("execMeta");
+    const lineNumbers = document.getElementById("lineNumbers");
+
+    // 1. Initialize SQLite in-browser. Python is loaded inside a worker only when Run is pressed.
+    async function initZeroDelayEngines() {
+      const dot = document.getElementById("wasmDot");
+      const txt = document.getElementById("wasmText");
+      try {
+        if (window.initSqlJs) {
+          SQLInstance = await window.initSqlJs({
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+          });
+          SQLDatabase = new SQLInstance.Database();
+          sqlJsReady = true;
+          if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+          if (txt) txt.textContent = "SQLite WASM ready; Python loads in a worker on Run";
+        } else {
+          if (dot) dot.className = "w-2 h-2 rounded-full bg-rose-400";
+          if (txt) txt.textContent = "SQLite WASM unavailable; Python worker loads on Run if CDN access works";
+        }
+      } catch (e) {
+        console.warn("SQL.js initialization failed:", e);
+        if (dot) dot.className = "w-2 h-2 rounded-full bg-rose-400";
+        if (txt) txt.textContent = "SQLite WASM unavailable; Python worker needs internet";
+      }
+    }
+
+    function runPythonInWorker(code, files, stdinText, timeoutMs = 20000) {
+      return new Promise(resolve => {
+        const workerSource = `
+          importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js");
+          self.onmessage = async function(event) {
+            const data = event.data;
+            const stdout = [];
+            const stderr = [];
+            try {
+              const pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+              pyodide.setStdout({ batched: function(line) { stdout.push(line); } });
+              pyodide.setStderr({ batched: function(line) { stderr.push(line); } });
+              const inputLines = data.stdin ? data.stdin.split("\n") : [];
+              let inputIndex = 0;
+              pyodide.setStdin({ stdin: function() { return inputIndex < inputLines.length ? inputLines[inputIndex++] : ""; } });
+              for (const file of data.files) pyodide.FS.writeFile(file.name, file.content);
+              await pyodide.loadPackagesFromImports(data.code);
+              await pyodide.runPythonAsync(data.code);
+              self.postMessage({ ok: true, output: stdout.join("\n") + (stderr.length ? (stdout.length ? "\n" : "") + stderr.join("\n") : "") });
+            } catch (error) {
+              self.postMessage({ ok: false, output: String(error) });
+            }
+          };
+        `;
+        const workerUrl = URL.createObjectURL(new Blob([workerSource], { type: "application/javascript" }));
+        let worker;
+        try { worker = new Worker(workerUrl); }
+        catch (error) {
+          URL.revokeObjectURL(workerUrl);
+          resolve({ ok: false, output: `Could not start Python worker: ${error.message || error}` });
+          return;
+        }
+        let settled = false;
+        const finish = result => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          worker.terminate();
+          URL.revokeObjectURL(workerUrl);
+          resolve(result);
+        };
+        const timer = setTimeout(() => finish({ ok: false, output: `Python execution timed out after ${Math.round(timeoutMs / 1000)} seconds. The worker was stopped so the editor stays responsive.` }), timeoutMs);
+        worker.onmessage = event => finish(event.data);
+        worker.onerror = event => finish({ ok: false, output: event.message || "Python worker failed to load. Check internet/CDN access and retry." });
+        worker.postMessage({ code, files: Object.entries(files).map(([name, content]) => ({ name, content })), stdin: stdinText });
+      });
+    }
+
+    // 2. Multi-File Management
+    function isSafeFileName(name) {
+      return typeof name === "string" && /^[a-zA-Z0-9._-]{1,80}$/.test(name) &&
+        !["__proto__", "constructor", "prototype"].includes(name.toLowerCase()) && name !== "." && name !== "..";
+    }
+
+    function renderFileTree() {
+      const container = document.getElementById("fileListContainer");
+      container.innerHTML = "";
+      Object.keys(projectFiles).forEach(fname => {
+        const isActive = fname === activeFileName;
+        const div = document.createElement("div");
+        div.className = `flex items-center justify-between px-2 py-1 rounded text-xs cursor-pointer transition ${
+          isActive ? "bg-indigo-600/25 text-indigo-300 border border-indigo-500/40 font-semibold" : "text-slate-400 hover:bg-slate-800"
+        }`;
+        div.onclick = () => switchFile(fname);
+        div.innerHTML = `<span class="mono truncate">${fname}</span>`;
+        if (Object.keys(projectFiles).length > 1) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "×";
+          delBtn.className = "text-slate-500 hover:text-rose-400 px-1";
+          delBtn.onclick = (ev) => {
+            ev.stopPropagation();
+            if (!window.confirm(`Delete ${fname}?`)) return;
+            projectFiles[activeFileName] = editor.value;
+            delete projectFiles[fname];
+            const remaining = Object.keys(projectFiles);
+            if (!remaining.length) {
+              const fallbackName = STARTER_TEMPLATES[currentLang].ext;
+              projectFiles[fallbackName] = "";
+              remaining.push(fallbackName);
+            }
+            if (fname === activeFileName) {
+              activeFileName = remaining[0];
+              editor.value = projectFiles[activeFileName] || "";
+              document.getElementById("fileTabName").textContent = activeFileName;
+              onEditorInput();
+            }
+            renderFileTree();
+            onEditorInput();
+          };
+          div.appendChild(delBtn);
+        }
+        container.appendChild(div);
+      });
+    }
+
+    function switchFile(fname) {
+      if (activeFileName && projectFiles[activeFileName] !== undefined) {
+        projectFiles[activeFileName] = editor.value;
+      }
+      activeFileName = fname;
+      editor.value = projectFiles[fname] || "";
+      document.getElementById("fileTabName").textContent = fname;
+      updateLineNumbers();
+      renderFileTree();
+      onEditorInput();
+    }
+
+    function createNewFile() {
+      const name = prompt("Enter new file name (e.g. utils.py, helper.js, styles.css):", "helper.py");
+      if (!name || !name.trim()) return;
+      const clean = name.trim();
+      if (!isSafeFileName(clean)) {
+        alert("Use a simple filename (letters, numbers, dot, underscore, hyphen); no folders or paths.");
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(projectFiles, clean)) {
+        alert("A file with that name already exists.");
+        return;
+      }
+      projectFiles[activeFileName] = editor.value;
+      projectFiles[clean] = "";
+      switchFile(clean);
+    }
+
+    // 3. Language Switching & Line Numbers
+    function changeLanguage(lang, customCode = null) {
+      const tpl = STARTER_TEMPLATES[lang];
+      if (!tpl) {
+        outputConsole.textContent = `Unsupported language: ${String(lang)}`;
+        execMeta.textContent = "Language unavailable";
+        return;
+      }
+      if (customCode === null) activeChallengeIdx = null;
+      currentLang = lang;
+      projectFiles = {};
+      activeFileName = tpl.ext;
+      projectFiles[activeFileName] = customCode !== null ? customCode : tpl.code;
+      document.getElementById("fileTabName").textContent = activeFileName;
+      editor.value = projectFiles[activeFileName];
+      updateLineNumbers();
+      renderFileTree();
+
+      if (lang === "html") {
+        outputConsole.classList.add("hidden");
+        webPreview.classList.remove("hidden");
+        runCode();
+      } else {
+        webPreview.classList.add("hidden");
+        outputConsole.classList.remove("hidden");
+      }
+      onEditorInput();
+    }
+
+    function onEditorInput() {
+      projectFiles[activeFileName] = editor.value;
+      updateLineNumbers();
+      try {
+        localStorage.setItem("cicodes_last_code", editor.value);
+        localStorage.setItem("cicodes_last_lang", currentLang);
+        localStorage.setItem("cicodes_project_files", JSON.stringify(projectFiles));
+        localStorage.setItem("cicodes_active_file", activeFileName);
+        const status = document.getElementById("autoSaveStatus");
+        if (status) status.textContent = "• Saved in this browser";
+      } catch (e) {
+        const status = document.getElementById("autoSaveStatus");
+        if (status) status.textContent = "• Local save unavailable";
+      }
+    }
+
+    function updateLineNumbers() {
+      const lines = editor.value.split("\n").length;
+      let html = "";
+      for (let i = 1; i <= lines; i++) html += i + "<br/>";
+      lineNumbers.innerHTML = html;
+    }
+
+    function syncScroll() {
+      lineNumbers.scrollTop = editor.scrollTop;
+    }
+
+    // 4. Time-limited isolated Web Worker for JavaScript
+    function runJsInWebWorker(code, timeoutMs = 3500) {
+      return new Promise((resolve) => {
+        const workerBlob = new Blob([`
+          self.onmessage = async function(e) {
+            let logs = [];
+            const customConsole = {
+              log: (...args) => logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ')),
+              error: (...args) => logs.push('[ERROR] ' + args.map(a => String(a)).join(' ')),
+              warn: (...args) => logs.push('[WARN] ' + args.map(a => String(a)).join(' '))
+            };
+            try {
+              const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+              const fn = new AsyncFunction('console', e.data.code);
+              await fn(customConsole);
+              self.postMessage({ ok: true, output: logs.join('\\n') });
+            } catch (err) {
+              self.postMessage({ ok: false, output: logs.join('\\n') + (logs.length ? '\\n' : '') + err.toString() });
+            }
+          };
+        `], { type: "application/javascript" });
+
+        const workerUrl = URL.createObjectURL(workerBlob);
+        let worker;
+        try {
+          worker = new Worker(workerUrl);
+        } catch (err) {
+          URL.revokeObjectURL(workerUrl);
+          resolve({ ok: false, output: `Could not start isolated worker: ${err.message || err}` });
+          return;
+        }
+        const cleanup = () => {
+          worker.terminate();
+          URL.revokeObjectURL(workerUrl);
+        };
+        const timer = setTimeout(() => {
+          cleanup();
+          resolve({ ok: false, output: `Execution stopped after ${timeoutMs}ms (time limit).` });
+        }, timeoutMs);
+        worker.onmessage = (e) => {
+          clearTimeout(timer);
+          cleanup();
+          resolve(e.data);
+        };
+        worker.onerror = (e) => {
+          clearTimeout(timer);
+          cleanup();
+          resolve({ ok: false, output: e.message || "Worker execution failed." });
+        };
+        worker.postMessage({ code });
+      });
+    }
+
+    // 5. Master Execution Function (Python WASM worker + Cloud Failover + Smart Local Compiler)
+    async function runCode() {
+      projectFiles[activeFileName] = editor.value;
+      const code = editor.value;
+      const stdinText = document.getElementById("stdinBox").value;
+      const mode = document.getElementById("engineMode").value;
+      const startTime = performance.now();
+
+      execMeta.textContent = "Executing...";
+      outputConsole.classList.remove("text-rose-400");
+
+      // A. Live HTML5/CSS3/JS Studio
+      if (currentLang === "html") {
+        webPreview.srcdoc = code;
+        execMeta.textContent = `Live DOM Rendered (${(performance.now() - startTime).toFixed(1)}ms)`;
+        return;
+      }
+
+      // B. JavaScript via an isolated browser Web Worker
+      if (currentLang === "javascript" && mode !== "cloud") {
+        const res = await runJsInWebWorker(code);
+        const elapsed = (performance.now() - startTime).toFixed(1);
+        outputConsole.textContent = res.output || "(Program finished cleanly with no console output)";
+        if (!res.ok) outputConsole.classList.add("text-rose-400");
+        execMeta.textContent = `${res.ok ? "Exit 0" : "Error"} • ${elapsed}ms (Browser Worker)`;
+        return;
+      }
+
+      // C. SQL via in-browser SQLite WASM. Never silently send SQL to a cloud compiler
+      // just because the browser runtime has not finished loading or the CDN failed.
+      if (currentLang === "sql" && mode !== "cloud" && !sqlJsReady) {
+        outputConsole.textContent = "SQLite WASM is still loading or unavailable. Check your internet/CDN access and try again. No SQL was executed.";
+        outputConsole.classList.add("text-rose-400");
+        execMeta.textContent = "SQLite runtime unavailable";
+        return;
+      }
+      if (currentLang === "sql" && sqlJsReady && mode !== "cloud") {
+        try {
+          if (!SQLDatabase) SQLDatabase = new SQLInstance.Database();
+          const res = SQLDatabase.exec(code);
+          const elapsed = (performance.now() - startTime).toFixed(1);
+          if (!res || res.length === 0) {
+            outputConsole.textContent = "✓ SQL executed successfully (0 rows returned).";
+          } else {
+            let formatted = "";
+            res.forEach((table, idx) => {
+              formatted += `Result Set #${idx + 1}: ${table.columns.join(" | ")}\n`;
+              formatted += "-".repeat(48) + "\n";
+              table.values.forEach(row => {
+                formatted += row.join(" | ") + "\n";
+              });
+              formatted += "\n";
+            });
+            outputConsole.textContent = formatted.trim();
+          }
+          execMeta.textContent = `Exit 0 • ${elapsed}ms (SQLite WASM; session database)`;
+          return;
+        } catch (sqlErr) {
+          outputConsole.textContent = "SQL Error:\n" + sqlErr.message;
+          outputConsole.classList.add("text-rose-400");
+          execMeta.textContent = "SQL Syntax Error";
+          return;
+        }
+      }
+
+      if (currentLang === "typescript" && mode === "local") {
+        outputConsole.textContent = "TypeScript needs the online compiler in this build. Switch Engine to Auto Hybrid or Force Cloud. No code was executed.";
+        execMeta.textContent = "TypeScript local runtime unavailable";
+        return;
+      }
+
+      // D. Python executes in a dedicated worker so infinite loops cannot freeze the editor.
+      if (currentLang === "python" && mode !== "cloud") {
+        const result = await runPythonInWorker(code, projectFiles, stdinText);
+        const elapsed = (performance.now() - startTime).toFixed(0);
+        outputConsole.textContent = result.output || (result.ok ? "(Python program completed with no stdout)" : "Python execution failed.");
+        outputConsole.classList.toggle("text-rose-400", !result.ok);
+        execMeta.textContent = result.ok ? `Exit 0 • ${elapsed}ms (Python Worker)` : `Python error • ${elapsed}ms`;
+        return;
+      }
+
+      // E. Cloud execution for languages without a supported in-browser runtime.
+      const tpl = STARTER_TEMPLATES[currentLang];
+      if (!tpl || !tpl.piston) {
+        outputConsole.textContent = `No execution runtime is configured for ${currentLang}.`;
+        execMeta.textContent = "Runtime unavailable";
+        return;
+      }
+      if (mode === "local") {
+        outputConsole.textContent = `${currentLang.toUpperCase()} does not have a local browser runtime in this build. Change Engine to Auto Hybrid or Force Cloud to execute it using the online compiler. No code was executed.`;
+        execMeta.textContent = "Local runtime unavailable";
+        return;
+      }
+
+      const filesPayload = Object.entries(projectFiles).map(([name, content]) => ({ name, content }));
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      try {
+        const res = await fetch("/api/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            language: tpl.piston.language,
+            version: tpl.piston.version,
+            files: filesPayload,
+            stdin: stdinText
+          }),
+          signal: controller.signal
+        });
+        if (!res.ok) throw new Error(`Compiler service returned HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data || !data.run) throw new Error("Compiler service returned an unexpected response");
+        const elapsed = (performance.now() - startTime).toFixed(0);
+        const out = (data.run.stdout || "") + (data.run.stderr ? (data.run.stdout ? "\n" : "") + data.run.stderr : "");
+        outputConsole.textContent = out.trim() || (data.run.code === 0 ? "(Program finished with no output)" : `Program exited with code ${data.run.code}`);
+        outputConsole.classList.toggle("text-rose-400", data.run.code !== 0 || Boolean(data.run.stderr));
+        execMeta.textContent = `Exit ${data.run.code} • ${elapsed}ms (Cloud Compiler)`;
+      } catch (cloudErr) {
+        const message = cloudErr && cloudErr.name === "AbortError"
+          ? "The online compiler timed out after 12 seconds. Please try again."
+          : `Online compiler unavailable: ${cloudErr.message || cloudErr}. Check your internet connection or try again later. No fallback simulation was counted as a real execution.`;
+        outputConsole.textContent = message;
+        outputConsole.classList.add("text-rose-400");
+        execMeta.textContent = "Execution unavailable";
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    // 7. AI Code Doctor ("Fix & Explain My Code")
+    function runAiDoctor() {
+      const code = editor.value;
+      const issues = [];
+      let fixedCode = code;
+
+      if (currentLang === "python") {
+        const lines = code.split("\n");
+        lines.forEach((l, idx) => {
+          if (/^\s*(def |if |for |while |else|elif |class )/.test(l) && !l.trim().endsWith(":") && !l.trim().includes("#")) {
+            issues.push(`Line ${idx + 1}: Missing colon ':' at end of statement.`);
+            lines[idx] = l + ":";
+          }
+          if (/print\s+["']/.test(l)) {
+            issues.push(`Line ${idx + 1}: Python 3 requires parentheses around print().`);
+            lines[idx] = l.replace(/print\s+(.+)/, "print($1)");
+          }
+        });
+        fixedCode = lines.join("\n");
+      } else if (currentLang === "cpp" || currentLang === "c") {
+        if (!code.includes("#include")) {
+          if (currentLang === "c") {
+            issues.push("Missing standard C header <stdio.h>.");
+            fixedCode = "#include <stdio.h>\n" + fixedCode;
+          } else {
+            issues.push("Missing C++ standard header <iostream>.");
+            fixedCode = "#include <iostream>\nusing namespace std;\n" + fixedCode;
+          }
+        }
+      }
+
+      if (issues.length > 0) {
+        editor.value = fixedCode;
+        onEditorInput();
+        outputConsole.textContent = `✨ CI Codes Code Helper Auto-Fixed ${issues.length} Issue(s):\n` +
+          issues.map(i => "  • " + i).join("\n") +
+          "\n\nRunning corrected program now...";
+        setTimeout(runCode, 400);
+      } else {
+        outputConsole.textContent = `✨ CI Codes Code Helper Analysis (${currentLang.toUpperCase()}):\n` +
+          `• Syntax Check: No structural syntax errors detected.\n` +
+          `• Time Complexity Hint: Use Hash Maps (dict / unordered_map) to keep lookups O(1).\n` +
+          `• Runtime Safety: This helper does not perform dynamic security or memory analysis.`;
+        execMeta.textContent = "Local analysis complete";
+      }
+    }
+
+    // 8. Automated Test Judge
+    async function runTestCases() {
+      if (activeChallengeIdx === null) {
+        outputConsole.textContent = "Choose one of the four labs first, then use Run Judge. The judge only reports tests that it actually checks.";
+        execMeta.textContent = "No lab selected";
+        return;
+      }
+      await runCode();
+      const actual = currentLang === "html" ? (webPreview.srcdoc || "") : outputConsole.textContent.trim();
+      if (/unavailable|timed out|failed to load|could not start|No code was executed|SQL Error:|Python Exception/i.test(actual)) {
+        outputConsole.textContent = actual + "\n\nJUDGE: NOT RUN — execution did not complete successfully.";
+        execMeta.textContent = "JUDGE: NOT RUN";
+        return;
+      }
+      const tests = {
+        0: ["Two Sum [2,7,11,15] target=9 -> [0, 1]", "Two Sum [3,2,4] target=6 -> [1, 2]"],
+        1: ["Chiragpala Naik MD", "Aarav Sharma", "Priya Patel"],
+        2: ["5 10 20 45 85", "Dijkstra Min-Heap Extraction Order"],
+        3: ["CI Codes v3.0", "Test Live JS Click"]
+      };
+      const expected = tests[activeChallengeIdx] || [];
+      const missing = expected.filter(fragment => !actual.includes(fragment));
+      const passed = expected.length - missing.length;
+      const verdict = missing.length === 0 ? "PASSED" : "FAILED";
+      outputConsole.textContent = actual + "\n\n========================================\n" +
+        `CI CODES LAB JUDGE: ${verdict}\n` +
+        `Checks matched: ${passed}/${expected.length}\n` +
+        (missing.length ? "Missing expected output:\n" + missing.map(x => "• " + x).join("\n") + "\n" : "All configured output checks matched.\n") +
+        "Note: this is output matching, not a memory/time-limit benchmark.\n" +
+        "========================================";
+      execMeta.textContent = `JUDGE: ${verdict} (${passed}/${expected.length})`;
+    }
+
+    // 9. Instant Shareable URL Generator (Encodes state in URL Hash so links work anywhere!)
+    async function generateShareUrl() {
+      try {
+        const payload = { l: currentLang, f: activeFileName, c: editor.value };
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        const shareUrl = `${window.location.origin}${window.location.pathname}#code=${encoded}`;
+        let copied = false;
+        if (navigator.clipboard && window.isSecureContext) {
+          try { await navigator.clipboard.writeText(shareUrl); copied = true; } catch (_) {}
+        }
+        if (!copied) {
+          const temp = document.createElement("textarea");
+          temp.value = shareUrl;
+          temp.setAttribute("readonly", "");
+          temp.style.position = "fixed";
+          temp.style.opacity = "0";
+          document.body.appendChild(temp);
+          temp.select();
+          copied = document.execCommand("copy");
+          temp.remove();
+        }
+        outputConsole.textContent = `${copied ? "Share link copied to clipboard." : "Share link generated (clipboard permission was unavailable)."}\n\nThe link contains your code in its URL hash; it is not stored on a server and very large projects may exceed URL limits.\n${shareUrl}`;
+        execMeta.textContent = copied ? "Share Link Copied" : "Share Link Generated";
+      } catch (err) {
+        outputConsole.textContent = `Could not generate share link: ${err.message || err}`;
+        execMeta.textContent = "Share failed";
+      }
+    }
+
+    function loadFromUrlHash() {
+      if (window.location.hash.startsWith("#code=")) {
+        try {
+          const raw = window.location.hash.replace("#code=", "");
+          const decoded = JSON.parse(decodeURIComponent(escape(atob(raw))));
+          if (decoded.l && STARTER_TEMPLATES[decoded.l] && typeof decoded.c === "string") {
+            document.getElementById("langSelect").value = decoded.l;
+            changeLanguage(decoded.l, decoded.c);
+            if (isSafeFileName(decoded.f)) {
+              const oldName = activeFileName;
+              activeFileName = decoded.f;
+              projectFiles = { [activeFileName]: decoded.c };
+              document.getElementById("fileTabName").textContent = activeFileName;
+              renderFileTree();
+              onEditorInput();
+            }
+            return true;
+          }
+        } catch (e) {}
+      }
+      return false;
+    }
+
+    // 10. Contest Mode & Anti-Cheat Tab-Switch Detector
+    let contestActive = false;
+    let contestSeconds = 3600;
+    let contestInterval = null;
+    let tabSwitches = 0;
+
+    function toggleContestMode() {
+      contestActive = !contestActive;
+      const btn = document.getElementById("contestBtn");
+      const hud = document.getElementById("contestHud");
+      if (contestActive) {
+        btn.textContent = "⏹ End Contest";
+        hud.classList.remove("hidden");
+        hud.classList.add("flex");
+        contestSeconds = 3600;
+        tabSwitches = 0;
+        document.getElementById("tabSwitchCount").textContent = "0";
+        contestInterval = setInterval(() => {
+          contestSeconds = Math.max(0, contestSeconds - 1);
+          const m = String(Math.floor(contestSeconds / 60)).padStart(2, "0");
+          const s = String(contestSeconds % 60).padStart(2, "0");
+          document.getElementById("contestTimer").textContent = `${m}:${s}`;
+          if (contestSeconds === 0) {
+            contestActive = false;
+            clearInterval(contestInterval);
+            btn.textContent = "⏱ Start Contest Mode";
+            hud.classList.add("hidden");
+            outputConsole.textContent += "\n⏱ Contest timer finished.";
+          }
+        }, 1000);
+      } else {
+        btn.textContent = "⏱ Start Contest Mode";
+        hud.classList.add("hidden");
+        clearInterval(contestInterval);
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (contestActive && document.hidden) {
+        tabSwitches++;
+        document.getElementById("tabSwitchCount").textContent = String(tabSwitches);
+        outputConsole.textContent += `\n⚠️ [PROCTOR ALERT] Tab switch detected (#${tabSwitches}) during active contest!`;
+      }
+    });
+
+    // 11. Quick Bottom REPL Evaluator
+    async function runQuickRepl() {
+      const inp = document.getElementById("quickReplInput");
+      const expr = inp.value.trim();
+      if (!expr) return;
+      inp.value = "";
+      outputConsole.textContent += `\n$ ${expr}\n=> evaluating...`;
+      const res = await runJsInWebWorker(`console.log(JSON.stringify((${expr})))`, 1500);
+      const current = outputConsole.textContent.replace(/=> evaluating\.\.\.$/, "");
+      outputConsole.textContent = current + (res.ok ? `=> ${res.output || "undefined"}` : `=> Error: ${res.output}`);
+      outputConsole.scrollTop = outputConsole.scrollHeight;
+    }
+
+    // 12. Helper Actions
+    function injectLib(type) {
+      const snippets = {
+        python_ds: "import math, sys, heapq, itertools\nfrom collections import defaultdict, Counter, deque\n\n",
+        python_numpy: "import numpy as np\n\n# Pyodide WASM automatically downloads numpy on Run!\narr = np.array([[1, 2], [3, 4]])\nprint('NumPy Determinant:', np.linalg.det(arr))\n",
+        cpp_Competitive: "#include <bits/stdc++.h>\nusing namespace std;\n\n",
+        web_tailwind: '<script src="https://cdn.tailwindcss.com"><\/script>\n<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>\n',
+        java_util: "import java.util.*;\nimport java.util.stream.*;\nimport java.io.*;\n"
+      };
+      editor.value = (snippets[type] || "") + editor.value;
+      onEditorInput();
+    }
+
+    function loadChallenge(idx) {
+      const challenges = [
+        {
+          lang: "python",
+          code: `# Challenge 1: Two Sum Optimizer (Runs in Python WASM worker)\ndef two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        if target - num in seen:\n            return [seen[target - num], i]\n        seen[num] = i\n    return []\n\nprint("Two Sum [2,7,11,15] target=9 ->", two_sum([2, 7, 11, 15], 9))\nprint("Two Sum [3,2,4] target=6 ->", two_sum([3, 2, 4], 6))\n`
+        },
+        {
+          lang: "sql",
+          code: STARTER_TEMPLATES.sql.code
+        },
+        {
+          lang: "cpp",
+          code: `// Challenge 3: C++20 Shortest Path Priority Queue Demo\n#include <iostream>\n#include <queue>\n#include <vector>\nusing namespace std;\n\nint main() {\n    priority_queue<int, vector<int>, greater<int>> min_heap;\n    for (int w : {45, 10, 85, 5, 20}) min_heap.push(w);\n    cout << "Dijkstra Min-Heap Extraction Order: ";\n    while (!min_heap.empty()) {\n        cout << min_heap.top() << " ";\n        min_heap.pop();\n    }\n    cout << endl;\n    return 0;\n}\n`
+        },
+        {
+          lang: "html",
+          code: STARTER_TEMPLATES.html.code
+        }
+      ];
+      const ch = challenges[idx];
+      if (!ch) return;
+      activeChallengeIdx = idx;
+      document.getElementById("langSelect").value = ch.lang;
+      changeLanguage(ch.lang, ch.code);
+      runCode();
+    }
+
+    function formatCode() {
+      editor.value = editor.value.split("\n").map(l => l.trimEnd()).join("\n").trim() + "\n";
+      onEditorInput();
+    }
+
+    function clearConsole() {
+      outputConsole.textContent = "";
+    }
+
+    function resetCode() {
+      changeLanguage(currentLang);
+    }
+
+    function downloadCodeFile() {
+      const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      const objectUrl = URL.createObjectURL(blob);
+      a.href = objectUrl;
+      a.download = activeFileName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    }
+
+    function toggleModal(id) {
+      document.getElementById(id).classList.toggle("hidden");
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        runCode();
+      }
+    });
+
+    // Boot IDE
+    window.addEventListener("DOMContentLoaded", () => {
+      if (!loadFromUrlHash()) {
+        let restored = false;
+        try {
+          const savedLang = localStorage.getItem("cicodes_last_lang");
+          const savedCode = localStorage.getItem("cicodes_last_code");
+          if (savedLang && STARTER_TEMPLATES[savedLang] && savedCode !== null) {
+            document.getElementById("langSelect").value = savedLang;
+            changeLanguage(savedLang, savedCode);
+            const rawFiles = localStorage.getItem("cicodes_project_files");
+            if (rawFiles) {
+              try {
+                const parsed = JSON.parse(rawFiles);
+                const entries = Object.entries(parsed).filter(([name, value]) => isSafeFileName(name) && typeof value === "string");
+                if (entries.length && entries.length <= 100) {
+                  projectFiles = Object.fromEntries(entries);
+                  const savedActive = localStorage.getItem("cicodes_active_file");
+                  activeFileName = Object.prototype.hasOwnProperty.call(projectFiles, savedActive) ? savedActive : entries[0][0];
+                  editor.value = projectFiles[activeFileName];
+                  document.getElementById("fileTabName").textContent = activeFileName;
+                  renderFileTree();
+                  updateLineNumbers();
+                }
+              } catch (_) {}
+            }
+            restored = true;
+          }
+        } catch (_) {}
+        if (!restored) changeLanguage("python");
+      }
+      initZeroDelayEngines();
+    });
+  </script>
+</body>
+</html>
